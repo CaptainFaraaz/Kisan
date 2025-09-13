@@ -5,13 +5,16 @@ import { ChatMessage } from '../types/farmer';
 interface ChatInterfaceProps {
   isOpen: boolean;
   onClose: () => void;
+  farmerName?: string;
+  currentCrops?: Array<{ name: string; status: string; }>;
+  recentActivities?: Array<{ type: string; date: string; }>;
 }
 
-export default function ChatInterface({ isOpen, onClose }: ChatInterfaceProps) {
+export default function ChatInterface({ isOpen, onClose, farmerName, currentCrops, recentActivities }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
-      message: 'നമസ്കാരം! I am your Krishi Sakhi, your AI farming companion. How can I help you today with your farming needs? You can ask me in English or Malayalam! 🌾',
+      message: `നമസ്കാരം ${farmerName ? farmerName.split(' ')[0] : 'farmer'}! I am your Krishi Sakhi, your AI farming companion. I can see you're growing ${currentCrops?.map(c => c.name).join(', ') || 'various crops'}. How can I help you today? You can ask me in English or Malayalam! 🌾`,
       sender: 'assistant',
       timestamp: new Date().toISOString(),
       language: 'english',
@@ -31,6 +34,80 @@ export default function ChatInterface({ isOpen, onClose }: ChatInterfaceProps) {
     scrollToBottom();
   }, [messages]);
 
+  const generateContextualResponse = (userMessage: string, language: 'english' | 'malayalam') => {
+    const message = userMessage.toLowerCase();
+    
+    // Weather related queries
+    if (message.includes('weather') || message.includes('rain') || message.includes('മഴ') || message.includes('കാലാവസ്ഥ')) {
+      return language === 'malayalam' 
+        ? 'അടുത്ത 3 ദിവസം കനത്ത മഴ പ്രതീക്ഷിക്കുന്നു. കീടനാശിനി തളിക്കുന്നത് ഒഴിവാക്കുക. നല്ല ഡ്രെയിനേജ് ഉറപ്പാക്കുക.'
+        : 'Heavy rainfall is expected for the next 3 days. Avoid pesticide spraying and ensure proper drainage in your fields.';
+    }
+    
+    // Rice related queries
+    if ((message.includes('rice') || message.includes('നെല്ല്')) && currentCrops?.some(c => c.name.includes('Rice') || c.name.includes('നെല്ല്'))) {
+      return language === 'malayalam'
+        ? 'നിങ്ങളുടെ നെല്ല് വിളയ്ക്ക് ഇപ്പോൾ ബ്രൗൺ പ്ലാന്റ് ഹോപ്പർ പരിശോധന ആവശ്യമാണ്. തണ്ടിൽ തവിട്ട് പാടുകൾ ഉണ്ടോ എന്ന് നോക്കുക.'
+        : 'Your rice crop needs brown plant hopper inspection now. Check for brown spots on stems and take preventive measures.';
+    }
+    
+    // Coconut related queries
+    if ((message.includes('coconut') || message.includes('തെങ്ങ്')) && currentCrops?.some(c => c.name.includes('Coconut') || c.name.includes('തെങ്ങ്'))) {
+      return language === 'malayalam'
+        ? 'തെങ്ങുകൾക്ക് ഇപ്പോൾ ജൈവ വളം പ്രയോഗിക്കാൻ നല്ല സമയമാണ്. ഓരോ മരത്തിന്റെയും ചുവട്ടിൽ കമ്പോസ്റ്റ് ഇടുക.'
+        : 'This is a good time to apply organic fertilizer to your coconut trees. Add compost around the base of each tree.';
+    }
+    
+    // Fertilizer queries
+    if (message.includes('fertilizer') || message.includes('വളം')) {
+      return language === 'malayalam'
+        ? 'മഴക്കാലത്ത് രാസവളം പ്രയോഗിക്കുന്നത് ഒഴിവാക്കുക. പകരം ജൈവ വളം ഉപയോഗിക്കുക. നല്ല ഫലം കിട്ടും.'
+        : 'Avoid chemical fertilizers during monsoon. Use organic fertilizers instead for better results and soil health.';
+    }
+    
+    // Pest control queries
+    if (message.includes('pest') || message.includes('disease') || message.includes('കീടം') || message.includes('രോഗം')) {
+      return language === 'malayalam'
+        ? 'കീടങ്ങൾക്കെതിരെ നീം എണ്ണ സ്പ്രേ ഉപയോഗിക്കുക. പ്രകൃതിദത്തവും ഫലപ്രദവുമാണ്. ആഴ്ചയിൽ രണ്ടുതവണ തളിക്കുക.'
+        : 'Use neem oil spray against pests. It\'s natural and effective. Apply twice a week for best results.';
+    }
+    
+    // Market price queries
+    if (message.includes('price') || message.includes('market') || message.includes('വില') || message.includes('മാർക്കറ്റ്')) {
+      return language === 'malayalam'
+        ? 'ഇന്നത്തെ മാർക്കറ്റ് വില നോക്കാൻ മാർക്കറ്റ് പ്രൈസസ് സെക്ഷൻ ചെക്ക് ചെയ്യുക. നെല്ലിന്റെ വില ഇപ്പോൾ നല്ലതാണ്.'
+        : 'Check the Market Prices section for today\'s rates. Rice prices are currently favorable for selling.';
+    }
+    
+    // Activity logging queries
+    if (message.includes('activity') || message.includes('log') || message.includes('പ്രവർത്തനം')) {
+      return language === 'malayalam'
+        ? 'നിങ്ങളുടെ കൃഷി പ്രവർത്തനങ്ങൾ രേഖപ്പെടുത്താൻ ആക്ടിവിറ്റി ലോഗർ ഉപയോഗിക്കുക. ഇത് പുരോഗതി ട്രാക്ക് ചെയ്യാൻ സഹായിക്കും.'
+        : 'Use the Activity Logger to record your farming activities. This helps track progress and plan better.';
+    }
+    
+    // Scheme related queries
+    if (message.includes('scheme') || message.includes('government') || message.includes('പദ്ധതി') || message.includes('സർക്കാർ')) {
+      return language === 'malayalam'
+        ? 'PM-KISAN പദ്ധതിയിൽ അപ്ലൈ ചെയ്യാൻ 10 ദിവസം മാത്രം ബാക്കി. സ്കീം അലേർട്സ് സെക്ഷൻ ചെക്ക് ചെയ്യുക.'
+        : 'Only 10 days left to apply for PM-KISAN scheme. Check the Schemes section for more government benefits.';
+    }
+    
+    // General farming advice
+    const generalResponses = language === 'malayalam' ? [
+      'നിങ്ങളുടെ വിള നന്നായി വളരുന്നുണ്ട്. പതിവ് പരിചരണം തുടരുക.',
+      'മഴക്കാലത്ത് പ്രത്യേക ശ്രദ്ധ വേണം. വെള്ളം കെട്ടി നിൽക്കാതെ നോക്കുക.',
+      'ജൈവ കൃഷി രീതികൾ പിന്തുടരുന്നത് നല്ലതാണ്. മണ്ണിന്റെ ആരോഗ്യം മെച്ചപ്പെടും.',
+      'അയൽവാസികളുമായി അനുഭവങ്ങൾ പങ്കുവെക്കുക. കമ്മ്യൂണിറ്റി ഫോറം ഉപയോഗിക്കുക.'
+    ] : [
+      'Your crops are growing well. Continue with regular care and monitoring.',
+      'During monsoon, pay special attention to drainage and pest management.',
+      'Following organic farming practices is beneficial for long-term soil health.',
+      'Share experiences with fellow farmers in the Community Forum section.'
+    ];
+    
+    return generalResponses[Math.floor(Math.random() * generalResponses.length)];
+  };
   const handleSendMessage = () => {
     if (!newMessage.trim()) return;
 
@@ -44,28 +121,14 @@ export default function ChatInterface({ isOpen, onClose }: ChatInterfaceProps) {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const currentUserMessage = newMessage;
     setNewMessage('');
 
     // Simulate AI response
     setTimeout(() => {
-      const responses = [
-        language === 'malayalam' 
-          ? 'നിങ്ങളുടെ നെല്ല് വിളയ്ക്ക് ബ്രൗൺ പ്ലാന്റ് ഹോപ്പർ പരിശോധിക്കാൻ ഞാൻ ശുപാർശ ചെയ്യുന്നു. സമീപകാല മഴ കീടങ്ങൾക്ക് അനുകൂല സാഹചര്യങ്ങൾ സൃഷ്ടിക്കുന്നു.'
-          : 'Based on your rice crop, I recommend checking for brown plant hopper. The recent rains create favorable conditions for pests.',
-        language === 'malayalam'
-          ? 'മികച്ച വിളവിനായി, കാലാവസ്ഥ മെച്ചപ്പെടുമ്പോൾ അടുത്ത ആഴ്ച ജൈവ വളം പ്രയോഗിക്കുന്നത് പരിഗണിക്കുക.'
-          : 'For better yield, consider applying organic fertilizer next week when the weather clears up.',
-        language === 'malayalam'
-          ? 'വരാനിരിക്കുന്ന മഴ നിങ്ങളുടെ തെങ്ങുകൾക്ക് നല്ലതാണ്. അടിഭാഗത്തിന് ചുറ്റും ഡ്രെയിനേജ് വൃത്തിയാക്കുക.'
-          : 'The upcoming rain is good for your coconut trees. Make sure drainage is clear around the base.',
-        language === 'malayalam'
-          ? 'നിങ്ങൾ അടുത്തിടെ പ്രവർത്തനങ്ങളൊന്നും രേഖപ്പെടുത്തിയിട്ടില്ലെന്ന് ഞാൻ ശ്രദ്ധിച്ചു. വരാനിരിക്കുന്ന കൃഷി ജോലികളെക്കുറിച്ച് ഞാൻ നിങ്ങളെ ഓർമ്മിപ്പിക്കട്ടെ?'
-          : 'I notice you haven\'t logged any activities recently. Would you like me to remind you about upcoming farm tasks?'
-      ];
-      
       const aiResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
-        message: responses[Math.floor(Math.random() * responses.length)],
+        message: generateContextualResponse(currentUserMessage, language),
         sender: 'assistant',
         timestamp: new Date().toISOString(),
         language,
@@ -73,7 +136,7 @@ export default function ChatInterface({ isOpen, onClose }: ChatInterfaceProps) {
       };
       
       setMessages(prev => [...prev, aiResponse]);
-    }, 1000);
+    }, 800);
   };
 
   const toggleRecording = () => {

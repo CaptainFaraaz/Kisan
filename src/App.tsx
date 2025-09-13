@@ -223,6 +223,9 @@ function App() {
       <ChatInterface
         isOpen={isChatOpen}
         onClose={() => setIsChatOpen(false)}
+        farmerName={farmer.name}
+        currentCrops={currentFarmerData.farm.crops}
+        recentActivities={activities.slice(0, 3)}
       />
 
       <NotificationCenter
